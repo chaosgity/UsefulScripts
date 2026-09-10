@@ -6,11 +6,15 @@ print () {
     echo -e "\n\033[1m> $1\033[0m\n"
 }
 
+### Configure username
+print 'Set your username'
+read -r -p "Username: " user
+
 print "Add user for empty user directory"
-sudo useradd -M -d /home/username -s /bin/bash chaos
-sudo usermod -aG sudo chaos
-sudo cp -rT /etc/skel /home/chaos
-sudo chown -R username:username /home/chaos
+sudo useradd -M -d /home/${user} -s /bin/bash ${user}
+sudo usermod -aG sudo ${user}
+sudo cp -rT /etc/skel /home/${user}
+sudo chown -R ${user}:${user} /home/${user}
 
 # Finish
 echo -e "\e[32mAll OK"
