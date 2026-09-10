@@ -1,0 +1,16 @@
+#!/usr/bin/env bash
+
+set -e
+
+print () {
+    echo -e "\n\033[1m> $1\033[0m\n"
+}
+
+print "Add user for empty user directory"
+sudo useradd -M -d /home/username -s /bin/bash chaos
+sudo usermod -aG sudo chaos
+sudo cp -rT /etc/skel /home/chaos
+sudo chown -R username:username /home/chaos
+
+# Finish
+echo -e "\e[32mAll OK"
