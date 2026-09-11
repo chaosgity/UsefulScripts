@@ -1,0 +1,15 @@
+:%s/^\s*\(.\{-}\)\s*$/\1 \\/
+
+So wendest du den Befehl an
+Drücke Esc, um sicherzustellen, dass du im Normal-Modus bist.
+Tippe : (Doppelpunkt), um die Befehlszeile zu öffnen.
+Kopiere den obigen Befehl hinein oder tippe ihn ab.
+Drücke Enter.
+
+So funktioniert der Befehl im Detail
+%s sucht in der gesamten Datei.
+^\s* findet alle führenden Leerzeichen am Zeilenanfang.
+\(.\{-}\) findet den eigentlichen Text und speichert ihn als Gruppe 1. 
+Das .\{-} sorgt dafür, dass so wenig Zeichen wie möglich genommen werden, damit die hinteren Leerzeichen nicht mitzählen.
+\s*$ findet alle folgenden Leerzeichen am Zeilenende.
+/\1 \\/ ersetzt das Ganze mit dem gespeicherten Text (\1), gefolgt von genau einem Leerzeichen und dem Backslash (\).
