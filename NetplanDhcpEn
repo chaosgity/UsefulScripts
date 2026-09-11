@@ -1,0 +1,37 @@
+#!/bin/bash
+# netplan_dhcp.sh — Ubuntu 26.04
+# Matches all en* interfaces, enables DHCP4+6, forces DNS to 1.1.1.1
+
+set -euo pipefail
+
+NETPLAN_FILE="/etc/netplan/99-dhcp-en.yaml"
+
+# Backup if file already exists
+[ -f "$NETPLAN_FILE" ] && cp "$NETPLAN_FILE" "${NETPLAN_FILE}.bak.$(date +%Y%m%d%H%M%S)"
+
+cat > "$NETPLAN_FILE" <<'EOF'
+network:
+  version: 2
+  renderer: networkd
+  ethernets:
+    en-dhcp:
+      match:
+        name: en*
+      dhcp4: true
+      dhcp4-overrides:
+        use-dns: false
+      dhcp6: true
+      dhcp6-overrides:
+        use-dns: false
+      nameservers:
+        addresses:
+          - 1.1.1.1
+EOF
+
+# Validate syntax before applying
+sudo netplan generate
+
+# Apply (use 'netplan try' instead if you want auto-revert on failure)
+sudo netplan apply
+
+echo "Done. Interfaces matching en* now use DHCP4/6 with DNS 1.1.1.1"   
