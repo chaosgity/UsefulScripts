@@ -1,0 +1,8 @@
+#!/usr/bin/env bash
+sudo -s
+apt install -y git
+git clone https://github.com/chaosgity/ubuntu-config-scripts-zfs
+cd ubuntu-config-scripts-zfs
+chmod +x 0*
+clear
+ls -lah
