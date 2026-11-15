@@ -3,7 +3,7 @@ efibootmgr -D --disk "$BOOT_DISK" \
   --create \
   --label "ZFSBootMenu (Backup)" \
   --loader '\EFI\ZBM\VMLINUZ-BACKUP.EFI' \
-  --unicode "maxcpus=1 zbm.timeout=10 loglevel=7"
+  --unicode "maxcpus=1 zbm.timeout=10 loglevel=7" \
   --verbose
 
 efibootmgr -D --disk "$BOOT_DISK" \
@@ -11,5 +11,5 @@ efibootmgr -D --disk "$BOOT_DISK" \
   --create \
   --label "ZFSBootMenu" \
   --loader '\EFI\ZBM\VMLINUZ.EFI'
-  --unicode "maxcpus=1 zbm.timeout=10 loglevel=7"
+  --unicode "maxcpus=1 zbm.timeout=10 loglevel=7" \
   --verbose
