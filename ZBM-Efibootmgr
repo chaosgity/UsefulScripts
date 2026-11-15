@@ -38,3 +38,19 @@ EFI:
 
 mount -t vfat /dev/nvme0n1p1 /boot/efi
 generate-zbm   
+
+
+Ctrl+R
+# Find the ESP
+lsblk -f | grep vfat
+
+# Mount it (adjust device name)
+mkdir -p /boot/efi
+mount -t vfat /dev/nvme0n1p1 /boot/efi
+
+# Check for the ZBM binary
+ls -l /boot/efi/EFI/ZBM/
+
+efibootmgr -v
+
+efibootmgr -c -d /dev/nvme0n1 -p 1 -L "ZFSBootMenu" -l '\EFI\ZBM\VMLINUZ.EFI'
