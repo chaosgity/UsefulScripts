@@ -1,0 +1,12 @@
+
+efibootmgr --disk /dev/nvme0n1 --part 1 --create --label "ZFSBootMenu" --loader '\EFI\zbm\zbm.efi' --unicode "maxcpus=1 zbm.timeout=10 loglevel=7" --verbose
+
+efibootmgr --disk /dev/nvme0n1 --part 1 --bootnum 0001 --replace-boot --label "ZFSBootMenu" --loader '\EFI\zbm\zbm.efi' --unicode "maxcpus=1 zbm.timeout=10 loglevel=7" --verbose
+
+mount_efivarfs rw
+efibootmgr -v   
+
+efibootmgr --disk /dev/nvme0n1 --part 1 --bootnum 0001 \
+  --replace-boot --label "ZFSBootMenu" \
+  --loader "\EFI\ZBM\zbm.efi" \
+  --unicode "maxcpus=1 zbm.timeout=10 loglevel=7"
