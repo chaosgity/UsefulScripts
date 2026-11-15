@@ -10,3 +10,21 @@ efibootmgr --disk /dev/nvme0n1 --part 1 --bootnum 0001 \
   --replace-boot --label "ZFSBootMenu" \
   --loader "\EFI\ZBM\zbm.efi" \
   --unicode "maxcpus=1 zbm.timeout=10 loglevel=7"
+
+zbm-kcl -e /boot/efi/EFI/zbm/zbm.efi "maxcpus=1"
+
+# Edit the config
+sed -i 's/CommandLine: ro quiet loglevel=0/CommandLine: ro quiet loglevel=0 maxcpus=1/' /etc/zfsbootmenu/config.yaml
+
+# Re-run generate-zbm (with ESP mounted)
+mount -t vfat /dev/nvme0n1p1 /boot/efi
+generate-zbm   
+
+
+# /etc/fstab
+UUID=<your-esp-uuid>  /boot/efi  vfat  defaults  0  0   
+
+blkid -s UUID -o value /dev/nvme0n1p1
+
+# swap (if using a separate swap partition)
+UUID=<swap-uuid>  none  swap  defaults  0  0   
