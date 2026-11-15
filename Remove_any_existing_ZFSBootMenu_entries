@@ -1,0 +1,16 @@
+# Remove any existing ZFSBootMenu entries
+for entry in $(efibootmgr -v | grep -i 'ZFSBootMenu' | sed 's/^Boot\([0-9A-F]*\).*/\1/'); do
+    efibootmgr -B -b "$entry"
+done
+
+# Now create the new one
+efibootmgr --create --disk "$DISK" --part 1 \
+  --label "ZFSBootMenu" --loader '\EFI\zbm\vmlinuz.EFI' \
+  --unicode "zbm.timeout=3 zbm.prefer=zroot zbm.import_policy=hostid"
+
+# Or simpler — just skip if it already exists:
+if ! efibootmgr -v | grep -q 'ZFSBootMenu'; then
+    efibootmgr --create --disk "$DISK" --part 1 \
+      --label "ZFSBootMenu" --loader '\EFI\zbm\vmlinuz.EFI' \
+      --unicode "zbm.timeout=3 zbm.prefer=zroot zbm.import_policy=hostid"
+fi   
