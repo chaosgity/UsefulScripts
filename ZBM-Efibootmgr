@@ -27,4 +27,14 @@ UUID=<your-esp-uuid>  /boot/efi  vfat  defaults  0  0
 blkid -s UUID -o value /dev/nvme0n1p1
 
 # swap (if using a separate swap partition)
-UUID=<swap-uuid>  none  swap  defaults  0  0   
+UUID=<swap-uuid>  none  swap  defaults  0  0
+
+/etc/zfsbootmenu/config.yaml
+Kernel:
+  Version: 7.0.0-43-generic   
+EFI:
+  Prefix: VMLINUZ
+  Versions: false   
+
+mount -t vfat /dev/nvme0n1p1 /boot/efi
+generate-zbm   
