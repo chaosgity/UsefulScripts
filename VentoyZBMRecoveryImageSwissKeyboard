@@ -1,0 +1,15 @@
+Steps
+1. Download the recovery image and add the keymap:
+curl -LJO https://github.com/zbm-dev/zfsbootmenu/releases/download/v3.1.0/zfsbootmenu-recovery-x86_64-v3.1.0-linux6.18.EFI
+
+curl -LJO https://get.zfsbootmenu.org/zbm-kcl
+chmod +x zbm-kcl
+
+# Add keymap + disable hostid check (so it finds your pool from any machine)
+./zbm-kcl -a "rd.vconsole.keymap=de_CH-latin1 zbm.import_policy=all" zfsbootmenu-recovery-x86_64-v3.1.0-linux6.18.EFI
+
+# Verify:
+./zbm-kcl zfsbootmenu-recovery-x86_64-v3.1.0-linux6.18.EFI
+2. Copy to your Ventoy USB (the large exFAT partition, not the VTOYEFI partition):
+cp zfsbootmenu-recovery-x86_64-v3.1.0-linux6.18.EFI /mnt/ventoy/
+3. Boot: Ventoy menu → select the .EFI file → it boots directly. 
