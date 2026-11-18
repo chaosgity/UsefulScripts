@@ -19,3 +19,7 @@ chroot /mnt
 
 
 zpool import -N -f -R /mnt zroot
+
+lsinitrd /boot/initrd.img-7.0.0-43-generic | grep zfs
+
+
