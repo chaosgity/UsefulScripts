@@ -2,7 +2,8 @@
 zpool import -N -R /mnt zroot
 
 # 2. Load the key (prompts for passphrase)
-zfs load-key zroot
+#zfs load-key zroot
+zfs load-key -L prompt zroot
 
 # 3. Mount the root dataset
 zfs mount zroot/ROOT/ubu0
