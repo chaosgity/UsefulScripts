@@ -1,0 +1,43 @@
+zfs
+lrwxrwxrwx   1 root     root           55 Nov 18 00:24 etc/systemd/system/initrd-root-fs.target.requires/zfs-nonroot-necessities.service -> /usr/lib/systemd/system/zfs-nonroot-necessities.service
+lrwxrwxrwx   1 root     root           41 Nov 18 00:24 etc/systemd/system/initrd.target.wants/zfs-import.target -> /usr/lib/systemd/system/zfs-import.target
+lrwxrwxrwx   1 root     root           51 Nov 18 00:24 etc/systemd/system/initrd.target.wants/zfs-rollback-bootfs.service -> /usr/lib/systemd/system/zfs-rollback-bootfs.service
+lrwxrwxrwx   1 root     root           51 Nov 18 00:24 etc/systemd/system/initrd.target.wants/zfs-snapshot-bootfs.service -> /usr/lib/systemd/system/zfs-snapshot-bootfs.service
+drwxr-xr-x   2 root     root            0 Nov 18 00:24 etc/systemd/system/zfs-import.target.wants
+lrwxrwxrwx   1 root     root           46 Nov 18 00:24 etc/systemd/system/zfs-import.target.wants/zfs-env-bootfs.service -> /usr/lib/systemd/system/zfs-env-bootfs.service
+lrwxrwxrwx   1 root     root           48 Nov 18 00:24 etc/systemd/system/zfs-import.target.wants/zfs-import-cache.service -> /usr/lib/systemd/system/zfs-import-cache.service
+lrwxrwxrwx   1 root     root           47 Nov 18 00:24 etc/systemd/system/zfs-import.target.wants/zfs-import-scan.service -> /usr/lib/systemd/system/zfs-import-scan.service
+lrwxrwxrwx   1 root     root           47 Nov 18 00:24 etc/systemd/system/zfs-import.target.wants/zfs-load-module.service -> /usr/lib/systemd/system/zfs-load-module.service
+drwxr-xr-x   2 root     root            0 Nov 18 00:24 etc/zfs
+----------   1 root     root           29 Nov 18 00:15 etc/zfs/zroot.key
+lrwxrwxrwx   1 root     root           11 Nov 18 00:24 usr/bin/zfs -> ../sbin/zfs
+-rwxr-xr-x   1 root     root         3313 Aug 21 19:55 usr/lib/dracut-zfs-lib.sh
+-rw-r--r--   1 root     root          152 Aug 21 19:55 usr/lib/modules-load.d/zfs.conf
+drwxr-xr-x   2 root     root            0 Nov 18 00:24 usr/lib/modules/7.0.0-43-generic/ubuntu/dkms/zfs
+-rw-r--r--   1 root     root        71081 Oct 23 14:01 usr/lib/modules/7.0.0-43-generic/ubuntu/dkms/zfs/spl.ko.zst
+-rw-r--r--   1 root     root      2357894 Oct 23 14:01 usr/lib/modules/7.0.0-43-generic/ubuntu/dkms/zfs/zfs.ko.zst
+-rwxr-xr-x   1 root     root          109 Aug 21 19:55 usr/lib/systemd/system-environment-generators/zfs-import-opts.sh
+-rwxr-xr-x   1 root     root         1211 Aug 21 19:55 usr/lib/systemd/system-generators/dracut-zfs-generator
+-rw-r--r--   1 root     root         1393 Aug 21 19:55 usr/lib/systemd/system/zfs-env-bootfs.service
+-rw-r--r--   1 root     root          611 Aug 21 19:55 usr/lib/systemd/system/zfs-import-cache.service
+-rw-r--r--   1 root     root          578 Aug 21 19:55 usr/lib/systemd/system/zfs-import-scan.service
+-rw-r--r--   1 root     root          101 Aug 21 19:55 usr/lib/systemd/system/zfs-import.target
+-rw-r--r--   1 root     root          360 Aug 21 19:55 usr/lib/systemd/system/zfs-load-module.service
+-rw-r--r--   1 root     root          774 Aug 21 19:55 usr/lib/systemd/system/zfs-nonroot-necessities.service
+-rw-r--r--   1 root     root          487 Aug 21 19:55 usr/lib/systemd/system/zfs-rollback-bootfs.service
+-rw-r--r--   1 root     root          442 Aug 21 19:55 usr/lib/systemd/system/zfs-snapshot-bootfs.service
+-rw-r--r--   1 root     root          324 Aug 21 19:55 usr/lib/udev/rules.d/90-zfs.rules
+lrwxrwxrwx   1 root     root           15 Nov 18 00:24 usr/lib/x86_64-linux-gnu/libzfs.so.7 -> libzfs.so.7.0.0
+-rw-r--r--   1 root     root       524544 Aug 21 19:55 usr/lib/x86_64-linux-gnu/libzfs.so.7.0.0
+lrwxrwxrwx   1 root     root           20 Nov 18 00:24 usr/lib/x86_64-linux-gnu/libzfs_core.so.3 -> libzfs_core.so.3.0.0
+-rw-r--r--   1 root     root        59784 Aug 21 19:55 usr/lib/x86_64-linux-gnu/libzfs_core.so.3.0.0
+-rwxr-xr-x   1 root     root          756 Aug 21 19:55 usr/sbin/fsck.zfs
+-rwxr-xr-x   1 root     root        22920 Aug 21 19:55 usr/sbin/mount.zfs
+-rwxr-xr-x   1 root     root       155336 Aug 21 19:55 usr/sbin/zfs
+-rwxr-xr-x   1 root     root          260 Aug 21 19:55 var/lib/dracut/hooks/cleanup/99-zfs-needshutdown.sh
+-rwxr-xr-x   1 root     root          965 Aug 21 19:55 var/lib/dracut/hooks/cmdline/95-parse-zfs.sh
+-rwxr-xr-x   1 root     root         3370 Aug 21 19:55 var/lib/dracut/hooks/mount/98-mount-zfs.sh
+-rwxr-xr-x   1 root     root         2911 Aug 21 19:55 var/lib/dracut/hooks/pre-mount/90-zfs-load-key.sh
+-rwxr-xr-x   1 root     root          384 Aug 21 19:55 var/lib/dracut/hooks/shutdown/20-export-zfs.sh
+rd.driver.pre=zfs
+ root=zfs:zroot/ROOT/ubu0 rootfstype=zfs rootflags=rw,nodev,relatime,xattr,posixacl,casesensitive
