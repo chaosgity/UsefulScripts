@@ -1,0 +1,20 @@
+# 1. Import the pool without mounting
+zpool import -N -R /mnt zroot
+
+# 2. Load the key (prompts for passphrase)
+zfs load-key zroot
+
+# 3. Mount the root dataset
+zfs mount zroot/ROOT/ubu0
+
+# 4. Mount /boot if it's a separate partition
+mount /dev/sdXN /mnt/boot
+
+# 5. Bind mounts
+for i in /dev /dev/pts /proc /sys /run; do mount --bind $i /mnt$i; done
+
+# 6. Chroot
+chroot /mnt   
+
+
+zpool import -N -f -R /mnt zroot
