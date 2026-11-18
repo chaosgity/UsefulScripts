@@ -9,7 +9,7 @@ zfs load-key -L prompt zroot
 zfs mount zroot/ROOT/ubu0
 
 # 4. Mount /boot if it's a separate partition
-mount /dev/sdXN /mnt/boot
+mount /dev/sdXN /mnt/boot/efi
 
 # 5. Bind mounts
 for i in /dev /dev/pts /proc /sys /run; do mount --bind $i /mnt$i; done
