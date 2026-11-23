@@ -1,0 +1,5 @@
+cat > /mnt/etc/hosts <<EOF
+#<ip-address>   <hostname.domain.org>   <hostname>
+127.0.0.1           localhost                   zubu      
+::1                 localhost                   zubu      
+EOF
