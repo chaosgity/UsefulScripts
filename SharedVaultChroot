@@ -1,0 +1,331 @@
+#!/usr/bin/env bash
+
+set -e
+
+exec &> >(tee "install.log")
+
+# Debug
+if [[ "$1" == "debug" ]]
+then
+    set -x
+    debug=1
+fi
+
+print () {
+    echo -e "\n\033[1m> $1\033[0m\n"
+    if [[ -n "$debug" ]]
+    then
+      read -rp "press enter to continue"
+    fi
+}
+
+# Tests
+ls /sys/firmware/efi/efivars > /dev/null &&   \
+    ping ubuntu.com -c 1 > /dev/null &&    \
+    timedatectl set-ntp true > /dev/null &&   \
+    modprobe zfs &&                           \
+    printf "Tests ok"
+
+# Install helpers
+print "Install helpers"
+apt update
+apt install -y debootstrap gdisk zfsutils-linux dosfstools arch-install-scripts
+
+# Generate /etc/hostid
+print "Generate /etc/hostid"
+zgenhostid -f 0x00bab10c
+
+# ─── Set Disk ───────────────────────────────────────────────
+print "Configure disk"
+echo ""
+echo "═══════════════════════════════════════════════════════════"
+echo "  DISK CONFIGURATION; typing number for installing OS:"
+echo "═══════════════════════════════════════════════════════════"
+echo ""
+
+attempts=0
+max_attempts=3
+
+while true; do
+    select ENTRY in $(ls /dev/disk/by-id/); do
+        DISK="/dev/disk/by-id/$ENTRY"
+        echo "Installing on $ENTRY."
+        break
+    done
+
+    read -rp "Do you want to wipe all datas on $ENTRY ? [y/N]: " confirm
+
+    if [[ "$confirm" =~ ^[Yy]$ ]]; then
+        dd if=/dev/zero of="$DISK" bs=512 count=1
+        wipefs -af "$DISK"
+        sgdisk -Zo "$DISK"
+        break
+    fi
+
+    attempts=$((attempts + 1))
+    if [ "$attempts" -ge "$max_attempts" ]; then
+        echo "Aborted after $max_attempts attempts." >&2
+        exit 1
+    fi
+    echo "Re-doing... ($attempts/$max_attempts)"
+    echo ""
+done
+
+# EFI part
+print "Creating EFI part"
+sgdisk -n1:1M:+512M -t1:EF00 "$DISK"
+EFI="$DISK-part1"
+    
+# ZFS part
+print "Creating ZFS part"
+sgdisk -n2:0:-10m -t2:bf01 "$DISK"
+    
+# Inform kernel
+partprobe "$DISK"
+    
+# Format efi part
+sleep 1
+print "Format EFI part"
+mkfs.vfat "$EFI"
+
+# ─── Set Passphrase ───────────────────────────────────────────────
+print "Set ZFS passphrase"
+echo ""
+echo "═══════════════════════════════════════════════════════════"
+echo "  PASSPHRASE CONFIGURATION; typing your secret passphrase:"
+echo "  (Caution: You cannot make corrections!)"
+echo "═══════════════════════════════════════════════════════════"
+echo ""
+read -r -p "> ZFS passphrase: " -s pass
+echo
+echo "$pass" > /etc/zfs/zroot.key
+chmod 000 /etc/zfs/zroot.key
+
+# ZFS part
+ZFS="$DISK-part2"
+    
+# Create ZFS pool
+print "Create ZFS pool"
+zpool create -f -o ashift=12                                  \
+                -o cachefile=none                             \
+                -o autotrim=on                                \
+                -O acltype=posixacl                           \
+                -O compression=zstd                           \
+                -O relatime=on                                \
+                -O xattr=sa                                   \
+                -O dnodesize=legacy                           \
+                -O encryption=aes-256-gcm                     \
+                -O keyformat=passphrase                       \
+                -O keylocation=file:///etc/zfs/zroot.key      \
+                -O normalization=formD                        \
+                -O mountpoint=none                            \
+                -O canmount=off                               \
+                -O devices=off                                \
+                -m none zroot "$ZFS"
+
+# ROOT & DATA dataset containers
+print "Create ROOT and DATA dataset containers"
+zfs create -o mountpoint=none -o canmount=off zroot/ROOT
+zfs create -o mountpoint=none -o canmount=off zroot/DATA
+
+# Shared persistent vault across all Boot Environments
+print "Create persistent shared vault dataset (zroot/DATA/vault)"
+zfs create -o mountpoint=/mnt/data -o canmount=on zroot/DATA/vault
+
+# ─── Set root dataset ───────────────────────────────────────────────
+print "Set root dataset"
+echo ""
+echo "════════════════════════════════════════════════════════════════"
+echo "  ROOT DATASET / BOOT ENVIRONMENT / ROOT FILESYSTEM DATASET"
+echo "  Root dataset configuration; typing name of the slash dataset:"
+echo "  (Default: ubu0 [zroot/ROOT/ubu0])"
+echo "════════════════════════════════════════════════════════════════"
+echo ""
+
+while true; do
+    echo "Confirm by pressing Enter or typing your choice:"
+    read -r -p "root_dataset [ubu0]: " ROOT_DATASET
+    ROOT_DATASET=${ROOT_DATASET:-ubu0}
+
+    echo ""
+    echo "Name of the slash dataset is: $ROOT_DATASET"
+    echo ""
+
+    read -r -p "Apply? [y/N]: " confirm
+    if [[ "$confirm" =~ ^[Yy]$ ]]; then
+        break
+    fi
+
+    echo "Re-entering..."
+    echo ""
+done
+
+print "Create slash dataset"
+zfs create -o mountpoint=/ -o canmount=noauto zroot/ROOT/"${ROOT_DATASET}"
+    
+# Set bootfs 
+print "Set ZFS bootfs"
+zpool set bootfs="zroot/ROOT/${ROOT_DATASET}" zroot
+
+# Setup key caching in ZFSBootMenu
+print "Setup key caching in ZFSBootMenu"
+zfs set org.zfsbootmenu:keysource="zroot/ROOT/${ROOT_DATASET}" zroot/ROOT/"${ROOT_DATASET}"
+zfs set org.zfsbootmenu:commandline="rw quiet" zroot/ROOT/"${ROOT_DATASET}"
+    
+# ─── Set home and user dataset ───────────────────────────────────────────────
+print "Create home and user dataset / set your username"
+echo ""
+echo "════════════════════════════════════════════════════════════════"
+echo "  USER DATASET CONFIGURATION "
+echo "  Typing name of the user dataset respectively username:"
+echo "  (Default: chaos [zroot/ROOT/ubu0/home/chaos])"
+echo "════════════════════════════════════════════════════════════════"
+echo ""
+
+zfs create -o canmount=noauto zroot/ROOT/"${ROOT_DATASET}"/home
+while true; do
+    echo "Confirm by pressing Enter or typing your choice:"
+
+    read -rp "Username [chaos]: " TARGET_USER
+    TARGET_USER="${TARGET_USER:-chaos}"
+    
+    echo ""
+    echo "  Name of the user dataset / user is: $TARGET_USER"
+    echo ""
+    read -rp "Apply? [y/N]: " confirm
+    
+    if [[ "$confirm" =~ ^[Yy]$ ]]; then
+        break
+    fi
+    echo "Re-entering..."
+    echo ""
+done
+        
+# User dataset configuration
+print "Create user dataset"
+zfs create -o canmount=noauto zroot/ROOT/"${ROOT_DATASET}"/home/"${TARGET_USER}"
+
+print "Export and re-import zpool under /mnt"
+zpool export zroot
+zpool import -d /dev/disk/by-id -R /mnt zroot -N -f
+
+print "Load ZFS keys"
+zfs load-key zroot
+
+print "Mount slash, home, and vault datasets"
+zfs mount zroot/ROOT/"${ROOT_DATASET}"
+zfs mount zroot/ROOT/"${ROOT_DATASET}"/home
+zfs mount zroot/ROOT/"${ROOT_DATASET}"/home/"${TARGET_USER}"
+zfs mount -a
+    
+# Mount EFI part
+print "Mount EFI part"
+mkdir -p /mnt/boot/efi
+mount "$EFI" /mnt/boot/efi
+
+# Copy key
+print "Copy key"
+mkdir -p /mnt/etc/zfs
+cp /etc/zfs/zroot.key /mnt/etc/zfs
+chmod 000 /mnt/etc/zfs/zroot.key
+
+# Update device symlinks
+print "Update device symlinks"
+udevadm trigger
+
+# ─── Bootstrap ───────────────────────────────────────────────
+print "minbase & essential boot packages in one pass"
+debootstrap \
+    --arch=amd64 \
+    --variant=minbase \
+    --include=apt,curl,vim,openssh-server,sudo,systemd,systemd-sysv,locales,keyboard-configuration,console-setup \
+    resolute \
+    /mnt \
+    https://ftp.uni-stuttgart.de/ubuntu
+
+# Generate fstab excluding ZFS entries
+print "Generate fstab excluding ZFS entries"
+genfstab -U /mnt | grep -v "zroot" | tr -s '\n' | sed 's/\/mnt//' > /mnt/etc/fstab
+
+# ─── Create hostname ───────────────────────────────────────────────
+print "Set hostname"
+echo ""
+echo "════════════════════════════════════════════════════════════════"
+echo "  HOSTNAME CONFIGURATION; typing name of the hostname:"
+echo "  (Default: zubu)"
+echo "════════════════════════════════════════════════════════════════"
+echo ""
+
+while true; do
+    echo "Confirm by pressing Enter or typing your choice:"
+    read -r -p "Hostname [zubu]: " HOST_NAME
+    HOST_NAME=${HOST_NAME:-zubu}
+
+    echo ""
+    echo "Name of the hostname is: $HOST_NAME"
+    echo ""
+
+    read -r -p "Apply? [y/N]: " confirm
+    if [[ "$confirm" =~ ^[Yy]$ ]]; then
+        break
+    fi
+
+    echo "Re-entering..."
+    echo ""
+done
+
+# Set hostname & hosts
+echo "$HOST_NAME" > /mnt/etc/hostname
+cat <<EOF > /mnt/etc/hosts
+127.0.0.1   localhost
+127.0.1.1   ${HOST_NAME}
+::1         localhost ip6-localhost ip6-loopback
+EOF
+
+# Copy hostid into target system
+cp /etc/hostid /mnt/etc/hostid
+
+# ─── Configure System in Chroot ───────────────────────────────────────────────
+print "Configure Ubuntu system, ZFS services, user, and vault symlinks in chroot"
+arch-chroot /mnt /bin/bash -e <<EOF
+# Enable universe/multiverse repositories and install kernel + ZFS packages
+sed -i 's/main$/main restricted universe multiverse/' /etc/apt/sources.list || true
+apt update
+apt install -y --no-install-recommends linux-image-generic zfs-initramfs zfsutils-linux network-manager
+
+# Remove .old kernel symlinks so ZFSBootMenu detects only the clean kernel
+rm -f /boot/vmlinuz.old /boot/initrd.img.old
+
+# Timezone & Locale
+ln -sf /usr/share/zoneinfo/Europe/Zurich /etc/localtime
+echo "en_US.UTF-8 UTF-8" >> /etc/locale.gen
+locale-gen
+echo "LANG=en_US.UTF-8" > /etc/locale.conf
+
+# Enable ZFS & Network services
+systemctl enable \
+  zfs.target \
+  zfs-import-scan.service \
+  zfs-import.target \
+  zfs-mount.service \
+  zfs-zed.service \
+  NetworkManager.service
+
+# Populate zfs-list.cache for systemd zfs-mount-generator
+mkdir -p /etc/zfs/zfs-list.cache
+touch /etc/zfs/zfs-list.cache/zroot
+zed -F &
+ZED_PID=\$!
+sleep 2
+zfs set canmount=noauto "zroot/ROOT/${ROOT_DATASET}/home/${TARGET_USER}"
+zfs set canmount=on "zroot/DATA/vault"
+sleep 1
+kill "\${ZED_PID}" || true
+
+# Strip /mnt prefix from zfs-list.cache so boot mountpoints resolve to / and /mnt/data
+sed -i "s|/mnt||g" /etc/zfs/zfs-list.cache/zroot
+
+# Create user with UID/GID 1000:1000 matching CachyOS
+groupadd -g 1000 "${TARGET_USER}"
+useradd -m -u 1000 -g 1000 -G sudo -s /bin/bash "${TARGET_USER}"
+
